@@ -118,6 +118,65 @@ To provide a secure, single entry point for end-users:
 ### **Final Output**
 ![output webpage](<resources/Screenshot 2026-04-09 at 10.28.41 AM.png>)
 
+
+### 7. Setup for monitoring
+To monitor the full kubernetes cluster:
+
+1. Install helm (The Kubernetes Package manager) using the bash script.
+2. Deploying Prometheus using helm repo, add and install within monitoring namespace.
+
+```
+# Add Prometheous official repository
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts 
+helm repo update
+
+# Create the dedicated monitoring namespace
+kubectl create namespace monitoring
+
+# Install Prometheus with local ephemeral storage
+
+helm install prometheus prometheus-community/prometheus \
+  --namespace monitoring \
+  --set server.persistentVolume.enabled=false \
+  --set alertmanager.persistentVolume.enabled=false
+
+# Check Status
+kubectl get pods -n monitoring -w
+```
+
+3. Grafana setup for proper visualization, using helm, By using Helm delpoying grafana inside monitoring namespace
+
+```
+# Add the official Grafana repository
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+
+# Install Grafana
+helm install grafana grafana/grafana \
+  --namespace monitoring \
+  --set persistence.enabled=false
+
+# Check Status
+kubectl get pods -n monitoring -w
+```
+
+4. Setting up Grafana's password, dashboards etc.
+```
+# Retrieve the Auto-Generated Admin Password, copy the resulted password. 
+kubectl get secret --namespace monitoring grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+```
+5. Access the Dashboard by exposing 3000 port in private network and enter username as ```admin``` and ```paste copied password```.
+
+6. Setting up Dashboard inside Grafana.
+   - Click the Dashboards icon (four squares) on the left menu.
+   - Click the New button -> Import.
+   - In the "Import via grafana.com" box, type the ID number: 1860
+   - (Examples of Dashboard can be loaded for monitoring: ID number 1860: Old best dashboard, ID number 315: Full Cluster monitoring, ID number: 6336: New proper dashboard for monitoring.. etc..)
+   - Click Load.
+   - At the bottom of the next screen, select your Prometheus data source from the dropdown.
+   - Click Import.
+
+
 ---
 
 ## Challenges Overcome
